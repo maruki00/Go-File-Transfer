@@ -69,14 +69,14 @@ func handleConnection(conn net.Conn) {
 
 		}
 		// Create the file
-		filePath := filepath.Join(h.X_PATH, fmt.Sprint("%s.%s", h.X_FILENAME, chunk))
+		filePath := filepath.Join(h.X_PATH, fmt.Sprintf("%s.%s", h.X_FILENAME, chunk))
 		file, err := os.Create(filePath)
 		if err != nil {
 			fmt.Println("Error creating file:", err)
 			return
 		}
 		defer file.Close()
-
+		chunk++
 		written, err := io.CopyN(file, conn, bytesToWrite)
 		if err != nil {
 			if err == io.EOF {
