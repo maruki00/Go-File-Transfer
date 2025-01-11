@@ -69,7 +69,7 @@ func handleConnection(conn net.Conn) {
 
 		}
 		// Create the file
-		filePath := filepath.Join(h.X_PATH, fmt.Sprintf("%s.%s", h.X_FILENAME, chunk))
+		filePath := filepath.Join(h.X_PATH, fmt.Sprintf("%s.%d", h.X_FILENAME, chunk))
 		file, err := os.Create(filePath)
 		if err != nil {
 			fmt.Println("Error creating file:", err)
