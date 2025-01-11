@@ -40,6 +40,9 @@ func Server() {
 	}
 }
 
+type ConnectionPool struct {
+}
+
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
@@ -61,6 +64,16 @@ func handleConnection(conn net.Conn) {
 	// Receive the file content in chunks
 	totalBytes := int64(0)
 	chunk := 1
+	// Create the file
+	filePath := filepath.Join(h.X_PATH, h.X_FILENAME)
+	file, err := os.Create(filePath)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+	chunk++
+
 	for totalBytes < h.X_NBYTES {
 
 		bytesToWrite := (h.X_NBYTES - totalBytes)
@@ -68,15 +81,6 @@ func handleConnection(conn net.Conn) {
 			bytesToWrite = h.X_CHUNK_SIZE * 1024 * 1024
 
 		}
-		// Create the file
-		filePath := filepath.Join(h.X_PATH, fmt.Sprintf("%s.%d", h.X_FILENAME, chunk))
-		file, err := os.Create(filePath)
-		if err != nil {
-			fmt.Println("Error creating file:", err)
-			return
-		}
-		defer file.Close()
-		chunk++
 		written, err := io.CopyN(file, conn, bytesToWrite)
 		if err != nil {
 			if err == io.EOF {
@@ -89,7 +93,6 @@ func handleConnection(conn net.Conn) {
 		totalBytes += written
 		fmt.Printf("\r\rReceived %v %%", (totalBytes*100)/h.X_NBYTES)
 	}
-
 }
 
 func Client(filePath string) {
@@ -122,7 +125,7 @@ func Client(filePath string) {
 		panic(err)
 	}
 
-	file, err := os.Open(filePath)
+	file, err := os.OpenFile(filePath, os.O_SYNC|os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
