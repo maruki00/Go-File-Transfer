@@ -63,25 +63,18 @@ func handleConnection(conn net.Conn) {
 
 	// Receive the file content in chunks
 	totalBytes := int64(0)
-	chunk := 1
+	// chunk := 1
 	// Create the file
 	filePath := filepath.Join(h.X_PATH, h.X_FILENAME)
-	file, err := os.Create(filePath)
+	file, err := os.OpenFile(filePath, os.O_SYNC|os.O_CREATE|os.O_RDWR, 0777)
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
 	}
 	defer file.Close()
-	chunk++
 
-	for totalBytes < h.X_NBYTES {
-
-		bytesToWrite := (h.X_NBYTES - totalBytes)
-		if bytesToWrite > h.X_CHUNK_SIZE*1024*1024 {
-			bytesToWrite = h.X_CHUNK_SIZE * 1024 * 1024
-
-		}
-		written, err := io.CopyN(file, conn, bytesToWrite)
+	for {
+		written, err := io.CopyN(file, conn, h.X_NBYTES)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -89,8 +82,9 @@ func handleConnection(conn net.Conn) {
 			fmt.Println("Error writing to file:", err)
 			return
 		}
-
-		totalBytes += written
+		if written > h.X_NBYTES {
+			break
+		}
 		fmt.Printf("\r\rReceived %v %%", (totalBytes*100)/h.X_NBYTES)
 	}
 }
@@ -133,13 +127,7 @@ func Client(filePath string) {
 
 	totalBytes := int64(0)
 	for {
-
-		bytesToSend := size - totalBytes
-		if bytesToSend > headers.X_CHUNK_SIZE*1024*1024 {
-			bytesToSend = headers.X_CHUNK_SIZE * 1024 * 1024
-		}
-
-		sent, err := io.CopyN(conn, file, bytesToSend)
+		sent, err := io.CopyN(conn, file, size)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -147,11 +135,7 @@ func Client(filePath string) {
 			fmt.Println("Error sending file:", err)
 			return
 		}
-
 		totalBytes += sent
-
-		fmt.Printf("\r\rSent %v %%", (totalBytes*100)/size)
-
 		if totalBytes >= size {
 			break
 		}
