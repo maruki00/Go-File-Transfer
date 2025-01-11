@@ -114,7 +114,6 @@ func Client(filePath string) {
 		X_PROTOCOL:   "tcp",
 	}
 
-	// Send headers as JSON
 	data, err := json.Marshal(&headers)
 	if err != nil {
 		panic(err)
@@ -123,7 +122,6 @@ func Client(filePath string) {
 		panic(err)
 	}
 
-	// Send the file content in chunks
 	file, err := os.Open(filePath)
 	if err != nil {
 		panic(err)
@@ -132,8 +130,9 @@ func Client(filePath string) {
 
 	totalBytes := int64(0)
 	for {
+
 		bytesToSend := size - totalBytes
-		if bytesToSend > headers.X_CHUNK_SIZE*1024*1024 { // Limit chunks to 4MB
+		if bytesToSend > headers.X_CHUNK_SIZE*1024*1024 {
 			bytesToSend = headers.X_CHUNK_SIZE * 1024 * 1024
 		}
 
@@ -149,7 +148,6 @@ func Client(filePath string) {
 		totalBytes += sent
 
 		fmt.Printf("\r\rSent %v %%", (totalBytes*100)/size)
-		//fmt.Printf("Sent %d/%d bytes\n", totalBytes, size)
 
 		if totalBytes >= size {
 			break
